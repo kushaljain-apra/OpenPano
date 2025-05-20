@@ -54,7 +54,7 @@ Mat32f Stitcher::build() {
   pairwise_matches.clear();
   // TODO automatically determine projection method even in naive mode
   if (ESTIMATE_CAMERA)
-    bundle.proj_method = ConnectedImages::ProjectionMethod::spherical;
+    bundle.proj_method = ConnectedImages::ProjectionMethod::flat;
   else
     bundle.proj_method = ConnectedImages::ProjectionMethod::flat;
   print_debug("Using projection method: %d\n", bundle.proj_method);
@@ -147,7 +147,7 @@ void Stitcher::estimate_camera() {
 
   // produced homo operates on [-w/2,w/2] coordinate
   REP(i, imgs.size()) {
-    //cout << "Camera " << i << " " << cameras[i].R << ", " << cameras[i].K() << endl;
+    // cout << "Camera " << i << " " << cameras[i].R << ", " << cameras[i].K() << endl;
     bundle.component[i].homo_inv = cameras[i].K() * cameras[i].R;
     bundle.component[i].homo = cameras[i].Rinv() * cameras[i].K().inverse();
   }

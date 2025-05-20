@@ -139,8 +139,12 @@ void Camera::angle_to_rotation(double rx, double ry, double rz, Homography& r) {
 				 s = sin(theta),
 				 c1 = 1 - c;
 	r.mult(c);
-	REP(k, 9)
+	cout << "Rottaion Matrix: {";
+	REP(k, 9) {
 		r[k] += c1 * u_outp[k] + s * u_crossp[k];
+		cout << r[k] << " "; 
+	}
+	cout << "}\n";
 }
 
 void Camera::straighten(std::vector<Camera>& cameras) {
@@ -178,8 +182,10 @@ void Camera::straighten(std::vector<Camera>& cameras) {
 	REP(i, 3) r[i * 3] = normX(i);
 	REP(i, 3) r[i * 3 + 1] = normY(i);
 	REP(i, 3) r[i * 3 + 2] = normZ(i);
-	for (auto& c : cameras)
-		c.R = c.R * r;
+	for (auto& c : cameras) {
+		c.R = c.R * r; 
+		cout << c.R << "\n";
+	}
 }
 
 }

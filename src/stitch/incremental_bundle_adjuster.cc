@@ -21,7 +21,7 @@ namespace {
 const static int NR_PARAM_PER_CAMERA = 6;
 const static int NR_TERM_PER_MATCH = 2;
 const static bool SYMBOLIC_DIFF = true;
-const static int LM_MAX_ITER = 100;
+const static int LM_MAX_ITER = 1000;
 const static float ERROR_IGNORE = 800.f;
 
 inline void camera_to_params(const Camera& c, double* ptr) {
@@ -164,8 +164,10 @@ void IncrementalBundleAdjuster::optimize() {
   auto results = state.get_cameras();
   int now = 0;
   // idx_added is sorted
-  for (auto& i : idx_added)
+  for (auto& i : idx_added) {
     result_cameras[i] = results[now++];
+    cout << "camera index:" << i << "#: "<< result_cameras[i] << endl;
+  }
 }
 
 IncrementalBundleAdjuster::ErrorStats IncrementalBundleAdjuster::calcError(

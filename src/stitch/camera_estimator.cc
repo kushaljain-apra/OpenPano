@@ -12,6 +12,7 @@
 #include "camera.hh"
 #include "match_info.hh"
 #include "incremental_bundle_adjuster.hh"
+#include "camera_data_writer.hh"
 
 using namespace std;
 using namespace config;
@@ -98,7 +99,10 @@ vector<Camera> CameraEstimator::estimate() {
     iba.optimize();
   }
 
-  if (STRAIGHTEN) Camera::straighten(cameras);
+  if (STRAIGHTEN) {
+    Camera::straighten(cameras);
+    CameraDataWriter::writeCameraData(float_imgs, cameras, "camera_pano_straighten.txt");
+  }
   return cameras;
 }
 

@@ -13,6 +13,7 @@
 #include "lib/config.hh"
 #include "projection.hh"
 #include "lib/timer.hh"
+#include "camera_data_writer.hh"
 using namespace std;
 using namespace pano;
 using namespace config;
@@ -168,6 +169,8 @@ void IncrementalBundleAdjuster::optimize() {
     result_cameras[i] = results[now++];
     cout << "camera index:" << i << "#: "<< result_cameras[i] << endl;
   }
+
+   CameraDataWriter::writeCameraData(float_imgs, result_cameras, "camera_pano.txt");
 }
 
 IncrementalBundleAdjuster::ErrorStats IncrementalBundleAdjuster::calcError(

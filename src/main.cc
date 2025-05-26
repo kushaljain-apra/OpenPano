@@ -33,7 +33,7 @@
 using namespace std;
 using namespace pano;
 using namespace config;
-
+vector<pair<std::string, Mat32f>> float_imgs;
 bool TEMPDEBUG = false;
 
 const int LABEL_LEN = 7;
@@ -214,6 +214,15 @@ void work(int argc, char* argv[]) {
  */
 	vector<string> imgs;
 	REPL(i, 1, argc) imgs.emplace_back(argv[i]);
+
+	float_imgs.resize(argc - 1);
+	REPL(i, 1, argc) {
+		float_imgs[i - 1].first = argv[i];
+		float_imgs[i - 1].second = read_img(argv[i]);
+		cout << "Image " << i << ": " << argv[i]; 
+		cout << "Width:" << float_imgs[i-1].second.width() << ",Height: " << float_imgs[i-1].second.height(); 
+	}
+
 	Mat32f res;
 	if (CYLINDER) {
 		CylinderStitcher p(move(imgs));

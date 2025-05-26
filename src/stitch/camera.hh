@@ -5,6 +5,7 @@
 #include <vector>
 #include "homography.hh"
 #include "common/common.hh"
+extern std::vector<std::pair<std::string, Mat32f>> float_imgs; 
 namespace pano {
 struct MatchInfo;
 

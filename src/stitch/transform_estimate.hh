@@ -30,7 +30,7 @@ class TransformEstimation {
 		// get a transform matix from second(f2) -> first(f1)
 		bool get_transform(MatchInfo* info);
 
-		enum TransformType { Affine, Homo };
+		enum TransformType { Affine, Homo, Translation };
 
 	private:
 		const MatchData& match;
@@ -54,5 +54,7 @@ class TransformEstimation {
 
 		// get inliers of a transform
 		std::vector<int> get_inliers(const Homography&) const;
+
+		Homography getTranslationTransform(const std::vector<Vec2D>& p1, const std::vector<Vec2D>& p2) const;
 };
 }

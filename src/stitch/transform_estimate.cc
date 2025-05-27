@@ -31,12 +31,15 @@ TransformEstimation::TransformEstimation(const MatchData& m_match,
 	shape1(shape1), shape2(shape2),
 	f2_homo_coor(match.size(), 3)
 {
-	if (CYLINDER || TRANS)
+	if (TRANS)
+		transform_type = Translation;
+	else if (CYLINDER)
 		transform_type = Affine;
 	else
 		transform_type = Homo;
 	int n = match.size();
-	if (n < ESTIMATE_MIN_NR_MATCH) return;
+	int min_initial_matches = (transform_type == Translation) ? 4 : ESTIMATE_MIN_NR_MATCH;
+	if (n < min_initial_matches) return;
 	REP(i, n) {
 		Vec2D old = kp2[match.data[i].second];
 		f2_homo_coor.at(i, 0) = old.x;
@@ -50,7 +53,14 @@ bool TransformEstimation::get_transform(MatchInfo* info) {
 	TotalTimer tm("get_transform");
 	// use Affine in cylinder mode, and Homography in normal mode
 	// TODO more condidate set will require more ransac iterations
-	int nr_match_used = (transform_type == Affine ? 6: 8) / 2 + 4;
+	int nr_match_used;
+	if (transform_type == Translation) {
+		nr_match_used = 2; // Use 2 points for translation estimation
+	} else if (transform_type == Affine) {
+		nr_match_used = (6 / 2) + 4; // Keep original logic: 7 points
+	} else { // Homo
+		nr_match_used = (8 / 2) + 4; // Keep original logic: 8 points
+	}
 	int nr_match = match.size();
 	if (nr_match < nr_match_used)
 		return false;
@@ -116,7 +126,14 @@ Homography TransformEstimation::calc_transform(const vector<int>& matches) const
 			 param2 = normalize(p2);
 
 	// homo from p2 to p1
-	Matrix homo = ((transform_type == Affine) ? getAffineTransform : getPerspectiveTransform)(p1, p2);
+	Homography h_transform_normalized;
+	if (transform_type == Affine) {
+		h_transform_normalized = Homography{getAffineTransform(p1, p2)};
+	} else if (transform_type == Homo) {
+		h_transform_normalized = Homography{getPerspectiveTransform(p1, p2)};
+	} else { // Translation
+		h_transform_normalized = getTranslationTransform(p1, p2); // p1 and p2 are already normalized.
+	}
 
 	Homography t1{{param1.second, 0, -param1.second * param1.first.x,
 								 0, param1.second, -param1.second * param1.first.y,
@@ -125,7 +142,7 @@ Homography TransformEstimation::calc_transform(const vector<int>& matches) const
 								 0, param2.second, -param2.second * param2.first.y,
 								 0, 0, 1}};
 	// return transform on non-normalized coordinate
-	Homography ret = t1.inverse() * Homography{homo} * t2;
+	Homography ret = t1.inverse() * h_transform_normalized * t2;
 	return ret;
 }
 
@@ -151,7 +168,8 @@ bool TransformEstimation::fill_inliers_to_matchinfo(
 		const std::vector<int>& inliers, MatchInfo* info) const {
 	TotalTimer tm("fill inliers");
 	info->confidence = -(float)inliers.size();		// only for debug
-	if (inliers.size() < ESTIMATE_MIN_NR_MATCH)
+	int min_inliers = (transform_type == Translation) ? 4 : ESTIMATE_MIN_NR_MATCH;
+	if (inliers.size() < min_inliers)
 		return false;
 
 	// get the number of matched point in the polygon in the first/second image
@@ -215,6 +233,31 @@ bool TransformEstimation::fill_inliers_to_matchinfo(
 				kp1[match.data[idx].first],
 				kp2[match.data[idx].second]);
 	return true;
+}
+
+Homography TransformEstimation::getTranslationTransform(const std::vector<Vec2D>& p1, const std::vector<Vec2D>& p2) const {
+    if (p1.empty() || p1.size() != p2.size()) {
+        // Return identity if input is invalid. RANSAC expects a valid homography.
+        // An unhealthy homography might also work if health() check fails.
+        return Homography::I(); 
+    }
+
+    double total_tx = 0;
+    double total_ty = 0;
+    for (size_t i = 0; i < p1.size(); ++i) {
+        total_tx += (p1[i].x - p2[i].x);
+        total_ty += (p1[i].y - p2[i].y);
+    }
+
+    double tx = p1.empty() ? 0 : total_tx / p1.size(); // Avoid division by zero if p1 was empty after all (though checked)
+    double ty = p1.empty() ? 0 : total_ty / p1.size();
+
+    // Homography is initialized by {h11, h12, h13, h21, h22, h23, h31, h32, h33}
+    return Homography({
+        1, 0, tx,
+        0, 1, ty,
+        0, 0, 1
+    });
 }
 
 }
